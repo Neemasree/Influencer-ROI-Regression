@@ -67,9 +67,9 @@ print(corr.to_string())
 
 # ── 6. Regression ─────────────────────────────────────────────────────────────
 feature_cols = ['engagement_rate', 'campaign_cost', 'product_sales', 'campaign_duration_days']
-# Use full dataset — no sampling
-X = df[feature_cols]
-y = df['roi']
+df_reg = df.sample(n=15000, random_state=42)
+X = df_reg[feature_cols]
+y = df_reg['roi']
 X_const = sm.add_constant(X)
 model   = sm.OLS(y, X_const)
 results = model.fit()

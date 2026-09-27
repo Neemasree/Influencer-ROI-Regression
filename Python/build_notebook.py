@@ -1,34 +1,39 @@
-{
- "nbformat": 4,
- "nbformat_minor": 5,
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "name": "python",
-   "version": "3.13.0"
-  }
- },
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+"""
+Build the Jupyter Notebook (analysis.ipynb) programmatically.
+Run once; the resulting .ipynb is the final deliverable notebook.
+"""
+import json, os
+
+NB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.ipynb")
+
+def md(source):
+    """Return a Markdown cell."""
+    return {"cell_type": "markdown", "metadata": {}, "source": source}
+
+def code(source):
+    """Return a Code cell."""
+    return {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": source,
+    }
+
+cells = []
+
+# ── Title ────────────────────────────────────────────────────────────────────
+cells.append(md([
     "# Predictive Statistical Analysis of Influencer Marketing ROI\n",
     "### Using Multiple Linear Regression (Python + Statsmodels)\n",
     "**Author:** Neema Sree  \n",
     "**Dataset:** Publicly available Influencer Marketing ROI dataset (Kaggle, 150,000 campaigns)  \n",
     "**Note:** The raw dataset is a publicly available source. This project's contribution is the\n",
-    "cleaning pipeline, feature engineering, and statistical analysis performed on it.\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "cleaning pipeline, feature engineering, and statistical analysis performed on it.\n",
+]))
+
+# ── Pipeline Overview ────────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Project Pipeline\n",
     "```\n",
@@ -50,23 +55,12 @@
     "         v  MY MULTIPLE LINEAR REGRESSION MODEL\n",
     "         |\n",
     "         v  MY PREDICTIONS & EVALUATION\n",
-    "```\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "---\n",
-    "## Module 1 — Import Libraries\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "```\n",
+]))
+
+# ── Module 1: Imports ────────────────────────────────────────────────────────
+cells.append(md(["---\n", "## Module 1 — Import Libraries\n"]))
+cells.append(code([
     "import os, warnings\n",
     "import pandas as pd\n",
     "import numpy as np\n",
@@ -84,53 +78,37 @@
     "print('Libraries loaded successfully.')\n",
     "print(f'  pandas      {pd.__version__}')\n",
     "print(f'  numpy       {np.__version__}')\n",
-    "print(f'  statsmodels {sm.__version__}')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(f'  statsmodels {sm.__version__}')\n",
+]))
+
+# ── Module 2: Load Raw Dataset ───────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 2 — Load Raw Dataset\n",
     "The raw dataset is loaded directly from `data/raw/` without any modification.\n",
-    "This preserves the original source as-is.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "This preserves the original source as-is.\n",
+]))
+cells.append(code([
     "RAW_PATH  = '../data/raw/influencer_marketing_roi_dataset.csv'\n",
     "PROC_PATH = '../data/processed/influencer_roi_analysis_dataset.csv'\n",
     "\n",
     "raw = pd.read_csv(RAW_PATH)\n",
     "print(f'Raw dataset shape : {raw.shape}')\n",
     "print(f'Columns           : {list(raw.columns)}')\n",
-    "raw.head()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "raw.head()\n",
+]))
+cells.append(code([
     "# Basic profile of the raw dataset\n",
     "print('Missing values per column:')\n",
     "print(raw.isnull().sum())\n",
     "print(f'\\nDuplicate rows : {raw.duplicated().sum()}')\n",
     "print(f'\\nPlatforms      : {raw[\"platform\"].unique().tolist()}')\n",
     "print(f'Categories     : {raw[\"influencer_category\"].unique().tolist()}')\n",
-    "print(f'Campaign types : {raw[\"campaign_type\"].unique().tolist()}')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(f'Campaign types : {raw[\"campaign_type\"].unique().tolist()}')\n",
+]))
+
+# ── Module 3: Data Cleaning ──────────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 3 — Data Cleaning\n",
     "Steps applied:\n",
@@ -140,15 +118,9 @@
     "4. Drop exact duplicate rows\n",
     "5. Retain only rows with recognised platform and category values\n",
     "6. Remove rows with zero `estimated_reach` (division by zero guard)\n",
-    "7. Validate `campaign_duration_days` against computed date difference (tolerance ±2 days)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "7. Validate `campaign_duration_days` against computed date difference (tolerance ±2 days)\n",
+]))
+cells.append(code([
     "CPM_TABLE = {'Instagram': 150, 'YouTube': 120, 'TikTok': 100, 'Twitter': 80}\n",
     "AVG_UNIT  = {'Beauty': 1500, 'Tech': 5000, 'Fashion': 1200, 'Food': 300,\n",
     "             'Fitness': 800, 'Travel': 3000, 'Gaming': 1000}\n",
@@ -185,13 +157,11 @@
     "df = df[(df['computed_dur'] - df['campaign_duration_days']).abs() <= 2]\n",
     "df.drop(columns=['computed_dur'], inplace=True)\n",
     "print(f'After duration check   : {len(df):,} rows')\n",
-    "print(f'\\nRows removed total     : {initial_rows - len(df):,}')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(f'\\nRows removed total     : {initial_rows - len(df):,}')\n",
+]))
+
+# ── Module 4: Feature Engineering ────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 4 — Feature Engineering\n",
     "Four new variables are engineered from the cleaned raw columns.\n\n",
@@ -202,15 +172,9 @@
     "| `Revenue` | Product_Sales × Category_Avg_Unit_Value |\n",
     "| `ROI` (**target**) | (Revenue − Campaign_Cost) / Campaign_Cost |\n\n",
     "**CPM rates (₹):** Instagram=150, YouTube=120, TikTok=100, Twitter=80  \n",
-    "**Avg unit values (₹):** Beauty=1500, Tech=5000, Fashion=1200, Food=300, Fitness=800, Travel=3000, Gaming=1000\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "**Avg unit values (₹):** Beauty=1500, Tech=5000, Fashion=1200, Food=300, Fitness=800, Travel=3000, Gaming=1000\n",
+]))
+cells.append(code([
     "# Engagement Rate (%)\n",
     "df['engagement_rate'] = (df['engagements'] / df['estimated_reach']) * 100\n",
     "\n",
@@ -237,25 +201,17 @@
     "df['year']  = df['start_date'].dt.year\n",
     "df['month'] = df['start_date'].dt.month\n",
     "\n",
-    "print(f'Rows after engineering : {len(df):,}')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(f'Rows after engineering : {len(df):,}')\n",
+]))
+
+# ── Module 5: Final Processed Dataset ────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 5 — Final Processed Dataset\n",
     "Select, rename, and validate the final analytical dataset.  \n",
-    "This is identical to `data/processed/influencer_roi_analysis_dataset.csv`.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "This is identical to `data/processed/influencer_roi_analysis_dataset.csv`.\n",
+]))
+cells.append(code([
     "COLS = {\n",
     "    'campaign_id': 'Campaign_ID', 'platform': 'Platform',\n",
     "    'influencer_category': 'Influencer_Category', 'campaign_type': 'Campaign_Type',\n",
@@ -276,37 +232,23 @@
     "\n",
     "print(f'Final dataset shape: {final.shape}')\n",
     "print(f'Null values        : {final.isnull().sum().sum()}')\n",
-    "final.head()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "final.head()\n",
+]))
+cells.append(code([
     "# Alternatively, load the pre-saved processed CSV directly:\n",
     "# final = pd.read_csv(PROC_PATH, parse_dates=['Start_Date', 'End_Date'])\n",
     "# print(final.shape)\n",
     "\n",
     "print('Column list and dtypes:')\n",
-    "print(final.dtypes)\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(final.dtypes)\n",
+]))
+
+# ── Module 6: EDA ────────────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
-    "## Module 6 — Exploratory Data Analysis\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "## Module 6 — Exploratory Data Analysis\n",
+]))
+cells.append(code([
     "# --- ROI Distribution ---\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
     "fig.suptitle('ROI Distribution — 147,000 Campaigns', fontsize=14, fontweight='bold')\n",
@@ -324,15 +266,9 @@
     "\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/01_roi_distribution.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "plt.show()\n",
+]))
+cells.append(code([
     "# --- Platform Analysis ---\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
     "fig.suptitle('Platform Analysis', fontsize=14, fontweight='bold')\n",
@@ -349,15 +285,9 @@
     "axes[1].set_title('ROI by Platform'); plt.suptitle('')\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/02_platform_analysis.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "plt.show()\n",
+]))
+cells.append(code([
     "# --- Category Analysis ---\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
     "fig.suptitle('Influencer Category Analysis', fontsize=14, fontweight='bold')\n",
@@ -373,15 +303,9 @@
     "axes[1].set_title('ROI Spread by Category'); plt.suptitle('')\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/03_category_analysis.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "plt.show()\n",
+]))
+cells.append(code([
     "# --- Scatter Plots ---\n",
     "sample = final.sample(n=3000, random_state=42)\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
@@ -400,15 +324,9 @@
     "\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/04_scatter_plots.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "plt.show()\n",
+]))
+cells.append(code([
     "# --- Campaign Type & Monthly Trend ---\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
     "fig.suptitle('Campaign Type & Temporal Trends', fontsize=14, fontweight='bold')\n",
@@ -426,23 +344,15 @@
     "                          'Jul','Aug','Sep','Oct','Nov','Dec'])\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/05_campaign_type_monthly.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "plt.show()\n",
+]))
+
+# ── Module 7: Statistical Analysis ───────────────────────────────────────────
+cells.append(md([
     "---\n",
-    "## Module 7 — Statistical Analysis\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "## Module 7 — Statistical Analysis\n",
+]))
+cells.append(code([
     "num_cols = ['Estimated_Reach', 'Engagements', 'Product_Sales',\n",
     "            'Campaign_Duration_Days', 'Engagement_Rate',\n",
     "            'Campaign_Cost', 'Revenue', 'ROI']\n",
@@ -450,36 +360,22 @@
     "desc = final[num_cols].describe().T\n",
     "desc['skewness'] = final[num_cols].skew()\n",
     "desc['kurtosis'] = final[num_cols].kurt()\n",
-    "print(desc.round(4).to_string())\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(desc.round(4).to_string())\n",
+]))
+cells.append(code([
     "# Shapiro-Wilk Normality Test on ROI (sample n=5,000)\n",
     "sample_sw = final['ROI'].sample(n=5000, random_state=42)\n",
     "stat, p = stats.shapiro(sample_sw)\n",
     "print(f'Shapiro-Wilk: W={stat:.4f}, p={p:.6f}')\n",
-    "print('ROI is NOT normally distributed' if p < 0.05 else 'ROI is normally distributed')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print('ROI is NOT normally distributed' if p < 0.05 else 'ROI is normally distributed')\n",
+]))
+
+# ── Module 8: Correlation Analysis ───────────────────────────────────────────
+cells.append(md([
     "---\n",
-    "## Module 8 — Correlation Analysis\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "## Module 8 — Correlation Analysis\n",
+]))
+cells.append(code([
     "corr = final[num_cols].corr()\n",
     "\n",
     "fig, ax = plt.subplots(figsize=(10, 8))\n",
@@ -489,15 +385,9 @@
     "ax.set_title('Pearson Correlation Heatmap', fontsize=14, fontweight='bold')\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/06_correlation_heatmap.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "plt.show()\n",
+]))
+cells.append(code([
     "roi_corr = corr['ROI'].drop('ROI').sort_values(ascending=False)\n",
     "fig, ax = plt.subplots(figsize=(9, 5))\n",
     "colors = [PALETTE[0] if v > 0 else PALETTE[3] for v in roi_corr.values]\n",
@@ -508,27 +398,19 @@
     "plt.tight_layout()\n",
     "plt.savefig('../Images/07_roi_correlation_bar.png', dpi=150, bbox_inches='tight')\n",
     "plt.show()\n",
-    "print(roi_corr.round(4).to_string())\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(roi_corr.round(4).to_string())\n",
+]))
+
+# ── Module 9: Regression ─────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 9 — Multiple Linear Regression (OLS)\n",
     "**Method:** Ordinary Least Squares via Statsmodels  \n",
     "**Observations:** All 147,000 rows of the processed dataset (no sampling)  \n",
     "**Features:** Engagement_Rate, Campaign_Cost, Product_Sales, Campaign_Duration_Days  \n",
-    "**Target:** ROI\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "**Target:** ROI\n",
+]))
+cells.append(code([
     "FEATURES = ['Engagement_Rate', 'Campaign_Cost', 'Product_Sales', 'Campaign_Duration_Days']\n",
     "TARGET   = 'ROI'\n",
     "\n",
@@ -540,15 +422,9 @@
     "\n",
     "print(f'Fitting OLS on full dataset: n = {len(final):,} observations')\n",
     "model = sm.OLS(y, X_const).fit()\n",
-    "print(model.summary())\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(model.summary())\n",
+]))
+cells.append(code([
     "# Coefficient Plot\n",
     "coefs = model.params\n",
     "conf  = model.conf_int()\n",
@@ -566,24 +442,16 @@
     "ax.set_xlabel('Coefficient Value')\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/08_coefficients.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "plt.show()\n",
+]))
+
+# ── Module 10: Residual Analysis ─────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 10 — Residual Analysis\n",
-    "Checks the OLS assumptions: normality of residuals, homoscedasticity, no autocorrelation.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "Checks the OLS assumptions: normality of residuals, homoscedasticity, no autocorrelation.\n",
+]))
+cells.append(code([
     "y_pred    = model.fittedvalues\n",
     "residuals = model.resid\n",
     "\n",
@@ -608,15 +476,9 @@
     "plt.tight_layout()\n",
     "plt.savefig('../Images/09_residual_analysis.png', dpi=150, bbox_inches='tight')\n",
     "plt.show()\n",
-    "print(f'Durbin-Watson: {sm.stats.stattools.durbin_watson(residuals):.4f} (ideal ~2.0)')\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(f'Durbin-Watson: {sm.stats.stattools.durbin_watson(residuals):.4f} (ideal ~2.0)')\n",
+]))
+cells.append(code([
     "# Actual vs Predicted\n",
     "fig, ax = plt.subplots(figsize=(8, 6))\n",
     "ax.scatter(y, y_pred, alpha=0.2, s=10, color=PALETTE[0])\n",
@@ -627,25 +489,17 @@
     "ax.legend()\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/10_actual_vs_predicted.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "plt.show()\n",
+]))
+
+# ── Module 11: Predictions ────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
     "## Module 11 — Predictions for New Campaigns\n",
     "Using the fitted model to predict ROI for 5 hypothetical new campaigns,\n",
-    "each with a 95% prediction interval.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "each with a 95% prediction interval.\n",
+]))
+cells.append(code([
     "new_camps = pd.DataFrame({\n",
     "    'Campaign':              ['Micro-Influencer Instagram', 'Macro-Influencer YouTube',\n",
     "                              'TikTok Viral Campaign', 'Twitter Tech Launch', 'Long-Duration Fitness'],\n",
@@ -663,15 +517,9 @@
     "new_camps['CI_Lower_95']   = pred['obs_ci_lower'].values.round(2)\n",
     "new_camps['CI_Upper_95']   = pred['obs_ci_upper'].values.round(2)\n",
     "\n",
-    "print(new_camps[['Campaign','Predicted_ROI','CI_Lower_95','CI_Upper_95']].to_string(index=False))\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print(new_camps[['Campaign','Predicted_ROI','CI_Lower_95','CI_Upper_95']].to_string(index=False))\n",
+]))
+cells.append(code([
     "fig, ax = plt.subplots(figsize=(10, 5))\n",
     "bars = ax.bar(new_camps['Campaign'], new_camps['Predicted_ROI'], color=PALETTE[:5], zorder=3)\n",
     "ax.errorbar(\n",
@@ -688,23 +536,15 @@
     "ax.grid(axis='y', alpha=0.5)\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/11_predictions.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "plt.show()\n",
+]))
+
+# ── Module 12: Evaluation ────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
-    "## Module 12 — Model Evaluation\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "## Module 12 — Model Evaluation\n",
+]))
+cells.append(code([
     "mae  = mean_absolute_error(y, y_pred)\n",
     "rmse = np.sqrt(mean_squared_error(y, y_pred))\n",
     "r2   = model.rsquared\n",
@@ -722,15 +562,9 @@
     "print(f'AIC             : {model.aic:.2f}')\n",
     "print(f'BIC             : {model.bic:.2f}')\n",
     "print(f'Observations    : {int(model.nobs):,}')\n",
-    "print('=' * 50)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "print('=' * 50)\n",
+]))
+cells.append(code([
     "errors = y - y_pred\n",
     "fig, axes = plt.subplots(1, 2, figsize=(14, 5))\n",
     "fig.suptitle('Model Evaluation', fontsize=14, fontweight='bold')\n",
@@ -748,23 +582,15 @@
     "\n",
     "plt.tight_layout()\n",
     "plt.savefig('../Images/12_error_distribution.png', dpi=150, bbox_inches='tight')\n",
-    "plt.show()\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "plt.show()\n",
+]))
+
+# ── Module 13: Conclusion ─────────────────────────────────────────────────────
+cells.append(md([
     "---\n",
-    "## Module 13 — Conclusion & Final Regression Equation\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "## Module 13 — Conclusion & Final Regression Equation\n",
+]))
+cells.append(code([
     "coefs = model.params\n",
     "pvals = model.pvalues\n",
     "\n",
@@ -784,20 +610,30 @@
     "print('4. Duration       : NOT statistically significant   (p = 0.909)')\n",
     "print()\n",
     "print(f'Model R2 = {r2:.4f} — explains {r2*100:.1f}% of ROI variance')\n",
-    "print(f'F-stat   = {f_stat:.2f}  (model is statistically significant at p < 0.001)')\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
+    "print(f'F-stat   = {f_stat:.2f}  (model is statistically significant at p < 0.001)')\n",
+]))
+cells.append(md([
     "---\n",
     "## Business Recommendations\n",
     "1. **Prioritise engagement rate over follower count** — a micro-influencer with 8% engagement outperforms a macro-influencer at 1%\n",
     "2. **Avoid overspending on reach** — Campaign Cost has a negative coefficient; efficiency matters more than scale\n",
     "3. **Focus on conversion** — Product Sales is a strong positive predictor; campaigns that drive purchases deliver the best ROI\n",
-    "4. **Duration has minimal effect** — a well-targeted 7-day campaign can match a 60-day campaign in ROI\n"
-   ]
-  }
- ]
+    "4. **Duration has minimal effect** — a well-targeted 7-day campaign can match a 60-day campaign in ROI\n",
+]))
+
+# ── Write notebook ────────────────────────────────────────────────────────────
+nb = {
+    "nbformat": 4,
+    "nbformat_minor": 5,
+    "metadata": {
+        "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+        "language_info": {"name": "python", "version": "3.13.0"},
+    },
+    "cells": cells,
 }
+
+with open(NB_PATH, "w", encoding="utf-8") as f:
+    json.dump(nb, f, indent=1, ensure_ascii=False)
+
+print(f"Notebook written: {NB_PATH}")
+print(f"Total cells: {len(cells)}")

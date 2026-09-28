@@ -2,11 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
-
-# Temporary run scripts
-Python/_run_temp.py
-Python/_run_log.txt
-Python/_extract_log.txt
+*.pyd
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
@@ -15,6 +11,14 @@ Python/_extract_log.txt
 .DS_Store
 Thumbs.db
 
-# Report and PPT (add manually when ready)
+# Saved model (large binary — regenerate with run_pipeline.py)
+outputs/ols_model.pkl
+
+# Report and PPT (add when ready)
 Report/
 PPT/
+
+# Virtual environments
+venv/
+env/
+.env/

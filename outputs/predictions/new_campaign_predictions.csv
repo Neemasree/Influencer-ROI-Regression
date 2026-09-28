@@ -1,0 +1,6 @@
+Campaign,Engagement_Rate,Campaign_Cost,Product_Sales,Campaign_Duration_Days,Predicted_ROI,CI_Lower_95,CI_Upper_95
+Micro-Influencer Instagram,8.5,30000,500,14,113.7048,-409.9701,637.3798
+Macro-Influencer YouTube,2.1,90000,1200,30,-25.1136,-548.7916,498.5645
+TikTok Viral Campaign,15.3,50000,800,7,81.0678,-442.6064,604.7421
+Twitter Tech Launch,4.2,25000,300,10,111.9937,-411.6832,635.6706
+Long-Duration Fitness,6.8,45000,700,60,79.9387,-443.7862,603.6635

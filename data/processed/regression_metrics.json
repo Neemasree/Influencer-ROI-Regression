@@ -1,95 +1,60 @@
 {
-  "r2": 0.3190486270596662,
-  "adj_r2": 0.31903009714033714,
-  "mae": 139.4181634272119,
-  "rmse": 267.1757104168677,
-  "f_stat": 17218.02569107419,
+  "observations": 147000,
+  "r2": 0.319049,
+  "adj_r2": 0.31903,
+  "f_stat": 17218.0257,
   "f_pvalue": 0.0,
-  "aic": 2060022.4495823532,
-  "bic": 2060071.9405216821,
-  "nobs": 147000,
+  "aic": 2060022.4496,
+  "bic": 2060071.9405,
+  "mae": 139.418163,
+  "rmse": 267.17571,
+  "features": [
+    "Engagement_Rate",
+    "Campaign_Cost",
+    "Product_Sales",
+    "Campaign_Duration_Days"
+  ],
+  "target": "ROI",
   "coefs": {
-    "const": 161.89766907121506,
-    "Engagement_Rate": 1.0913763538501688,
-    "Campaign_Cost": -0.002855993775733085,
-    "Product_Sales": 0.05666661565524227,
-    "Campaign_Duration_Days": -0.0087881150751384
+    "const": 161.89766907,
+    "Engagement_Rate": 1.09137635,
+    "Campaign_Cost": -0.00285599,
+    "Product_Sales": 0.05666662,
+    "Campaign_Duration_Days": -0.00878812
+  },
+  "std_errors": {
+    "const": 2.26785335,
+    "Engagement_Rate": 0.00786775,
+    "Campaign_Cost": 1.911e-05,
+    "Product_Sales": 0.00048806,
+    "Campaign_Duration_Days": 0.08336937
+  },
+  "t_stats": {
+    "const": 71.388068,
+    "Engagement_Rate": 138.715248,
+    "Campaign_Cost": -149.440123,
+    "Product_Sales": 116.106242,
+    "Campaign_Duration_Days": -0.105412
   },
   "pvalues": {
     "const": 0.0,
     "Engagement_Rate": 0.0,
     "Campaign_Cost": 0.0,
     "Product_Sales": 0.0,
-    "Campaign_Duration_Days": 0.9160491969369069
+    "Campaign_Duration_Days": 0.9160492
   },
-  "conf_int": {
-    "Engagement_Rate": [
-      1.0759557278702305,
-      1.1067969798301072
-    ],
-    "Campaign_Cost": [
-      -0.0028934515275009847,
-      -0.002818536023965185
-    ],
-    "Product_Sales": [
-      0.05571003108119912,
-      0.057623200229285416
-    ],
-    "Campaign_Duration_Days": [
-      -0.17219041776511473,
-      0.15461418761483792
-    ]
+  "conf_int_lower": {
+    "const": 157.45272158,
+    "Engagement_Rate": 1.07595573,
+    "Campaign_Cost": -0.00289345,
+    "Product_Sales": 0.05571003,
+    "Campaign_Duration_Days": -0.17219042
   },
-  "new_campaigns": [
-    {
-      "Campaign": "Micro-Influencer Instagram",
-      "Engagement_Rate": 8.5,
-      "Campaign_Cost": 30000,
-      "Product_Sales": 500,
-      "Campaign_Duration_Days": 14,
-      "Predicted_ROI": 113.7,
-      "CI_Lower_95": -409.97,
-      "CI_Upper_95": 637.38
-    },
-    {
-      "Campaign": "Macro-Influencer YouTube",
-      "Engagement_Rate": 2.1,
-      "Campaign_Cost": 90000,
-      "Product_Sales": 1200,
-      "Campaign_Duration_Days": 30,
-      "Predicted_ROI": -25.11,
-      "CI_Lower_95": -548.79,
-      "CI_Upper_95": 498.56
-    },
-    {
-      "Campaign": "TikTok Viral Campaign",
-      "Engagement_Rate": 15.3,
-      "Campaign_Cost": 50000,
-      "Product_Sales": 800,
-      "Campaign_Duration_Days": 7,
-      "Predicted_ROI": 81.07,
-      "CI_Lower_95": -442.61,
-      "CI_Upper_95": 604.74
-    },
-    {
-      "Campaign": "Twitter Tech Launch",
-      "Engagement_Rate": 4.2,
-      "Campaign_Cost": 25000,
-      "Product_Sales": 300,
-      "Campaign_Duration_Days": 10,
-      "Predicted_ROI": 111.99,
-      "CI_Lower_95": -411.68,
-      "CI_Upper_95": 635.67
-    },
-    {
-      "Campaign": "Long-Duration Fitness",
-      "Engagement_Rate": 6.8,
-      "Campaign_Cost": 45000,
-      "Product_Sales": 700,
-      "Campaign_Duration_Days": 60,
-      "Predicted_ROI": 79.94,
-      "CI_Lower_95": -443.79,
-      "CI_Upper_95": 603.66
-    }
-  ]
+  "conf_int_upper": {
+    "const": 166.34261657,
+    "Engagement_Rate": 1.10679698,
+    "Campaign_Cost": -0.00281854,
+    "Product_Sales": 0.0576232,
+    "Campaign_Duration_Days": 0.15461419
+  }
 }

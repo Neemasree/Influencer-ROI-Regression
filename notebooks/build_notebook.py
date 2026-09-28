@@ -1,0 +1,779 @@
+"""
+notebooks/build_notebook.py
+============================
+Programmatically generates analysis.ipynb.
+Run once: python notebooks/build_notebook.py
+"""
+import json, os
+
+NB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.ipynb")
+
+def md(source): return {"cell_type":"markdown","metadata":{},"source":source}
+def code(source): return {"cell_type":"code","execution_count":None,"metadata":{},"outputs":[],"source":source}
+
+cells = []
+
+# ── Title Page ────────────────────────────────────────────────────────────────
+cells.append(md([
+    "# Predictive Statistical Analysis of Influencer Marketing ROI\n",
+    "## Using Multiple Linear Regression (Python + Statsmodels)\n\n",
+    "---\n\n",
+    "| | |\n",
+    "|---|---|\n",
+    "| **Author** | Neema Sree |\n",
+    "| **Project Type** | Final Year Academic Project — Statistical Analysis |\n",
+    "| **Dataset** | Publicly available Influencer Marketing ROI dataset (Kaggle, 150,000 rows) |\n",
+    "| **Raw Rows** | 150,000 |\n",
+    "| **Processed Rows** | 147,000 |\n",
+    "| **Regression Observations** | 147,000 (full processed dataset, no sampling) |\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 1 — Project Introduction
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 1 — Project Introduction\n",
+]))
+cells.append(md([
+    "### Project Title\n",
+    "**Predictive Statistical Analysis of Influencer Marketing ROI**\n\n",
+    "### Problem Statement\n",
+    "Companies spend millions on influencer marketing campaigns without knowing in advance "
+    "which campaigns will deliver good ROI. Most budget allocation decisions are still made "
+    "based on follower count and intuition, leading to inefficient spend.\n\n",
+    "### Aim\n",
+    "To build a multiple linear regression model using statistical methods that can predict "
+    "the ROI of an influencer marketing campaign based on measurable campaign characteristics.\n\n",
+    "### Objectives\n",
+    "1. Load, inspect, and clean a real-world influencer marketing dataset\n",
+    "2. Engineer the key financial variables (Engagement Rate, Campaign Cost, Revenue, ROI)\n",
+    "3. Perform exploratory data analysis and descriptive statistics\n",
+    "4. Analyse feature correlations and identify predictors of ROI\n",
+    "5. Build and interpret a Multiple Linear Regression model using Statsmodels OLS\n",
+    "6. Diagnose model assumptions and evaluate model performance\n",
+    "7. Generate ROI predictions for new campaigns with confidence intervals\n\n",
+    "### Technologies Used\n",
+    "| Technology | Purpose |\n",
+    "|---|---|\n",
+    "| Python 3 | Core programming language |\n",
+    "| Pandas | Data loading, cleaning, manipulation |\n",
+    "| NumPy | Numerical operations |\n",
+    "| Matplotlib / Seaborn | Data visualisation |\n",
+    "| Statsmodels | OLS Regression — coefficients, p-values, R2, CIs |\n",
+    "| SciPy | Normality testing (Shapiro-Wilk) |\n",
+    "| scikit-learn | MAE and RMSE evaluation only |\n",
+    "| openpyxl | Excel workbook generation |\n\n",
+    "> **No machine learning frameworks, web frameworks, or databases are used.**  \n",
+    "> This is a pure statistical analysis project.\n\n",
+    "### Dataset Source\n",
+    "The raw dataset is a **publicly available dataset** sourced from Kaggle.  \n",
+    "It was **not collected by the author**.  \n",
+    "The project's contribution is the **data cleaning pipeline, feature engineering, "
+    "and statistical modelling** applied to derive the processed dataset and regression results.\n\n",
+    "> **Important:** `Campaign_Cost`, `Revenue`, and `ROI` are **derived variables** "
+    "calculated by this project's feature engineering. They were **not** provided by the "
+    "original Kaggle dataset.\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 2 — Import Libraries
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md(["---\n","## Module 2 — Import Libraries\n"]))
+cells.append(code([
+    "import os, warnings\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import matplotlib.ticker as mticker\n",
+    "import seaborn as sns\n",
+    "from scipy import stats\n",
+    "import statsmodels.api as sm\n",
+    "from sklearn.metrics import mean_absolute_error, mean_squared_error\n",
+    "\n",
+    "warnings.filterwarnings('ignore')\n",
+    "sns.set_theme(style='whitegrid', palette='muted', font_scale=1.1)\n",
+    "PALETTE = ['#4C72B0','#DD8452','#55A868','#C44E52','#8172B2','#937860','#DA8BC3']\n",
+    "\n",
+    "print('Library versions:')\n",
+    "print(f'  pandas      {pd.__version__}')\n",
+    "print(f'  numpy       {np.__version__}')\n",
+    "print(f'  statsmodels {sm.__version__}')\n",
+    "print('All libraries loaded successfully.')\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 3 — Load Raw Dataset
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 3 — Load Raw Dataset\n\n",
+    "The raw Kaggle dataset is loaded from `data/raw/` **without any modification**.\n",
+    "This preserves the original source file as-is.\n",
+]))
+cells.append(code([
+    "RAW_PATH  = '../data/raw/influencer_marketing_roi_dataset.csv'\n",
+    "PROC_PATH = '../data/processed/influencer_roi_analysis_dataset.csv'\n",
+    "\n",
+    "raw = pd.read_csv(RAW_PATH)\n",
+    "print(f'Shape          : {raw.shape}')\n",
+    "print(f'Columns        : {list(raw.columns)}')\n",
+    "raw.head(5)\n",
+]))
+cells.append(code([
+    "print('Data Types:')\n",
+    "print(raw.dtypes)\n",
+    "print(f'\\nMissing values per column:')\n",
+    "print(raw.isnull().sum())\n",
+    "print(f'\\nDuplicate rows : {raw.duplicated().sum():,}')\n",
+]))
+cells.append(code([
+    "print('Unique values per categorical column:')\n",
+    "for col in ['platform','influencer_category','campaign_type']:\n",
+    "    print(f'  {col}: {sorted(raw[col].unique().tolist())}')\n",
+    "print()\n",
+    "print('Numeric summary:')\n",
+    "raw[['engagements','estimated_reach','product_sales','campaign_duration_days']].describe().round(2)\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 4 — Data Cleaning
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 4 — Data Cleaning\n\n",
+    "### Cleaning Steps Applied\n",
+    "1. Strip whitespace from string columns\n",
+    "2. Parse `start_date` and `end_date` to datetime\n",
+    "3. Drop rows with missing values\n",
+    "4. Drop exact duplicate rows\n",
+    "5. Retain only rows with recognised platform and category values\n",
+    "6. Remove rows where `estimated_reach = 0` (would cause division by zero in Engagement Rate)\n",
+    "7. Remove rows with negative numeric values\n",
+    "8. Validate `campaign_duration_days` against computed date difference (tolerance ±2 days)\n",
+]))
+cells.append(code([
+    "# Lookup tables — same values used in feature engineering and prediction\n",
+    "CPM = {'Instagram':150, 'YouTube':120, 'TikTok':100, 'Twitter':80}\n",
+    "AVG_UNIT_VALUE = {\n",
+    "    'Beauty':1500, 'Tech':5000, 'Fashion':1200, 'Food':300,\n",
+    "    'Fitness':800, 'Travel':3000, 'Gaming':1000\n",
+    "}\n",
+    "\n",
+    "df = raw.copy()\n",
+    "initial_rows = len(df)\n",
+    "\n",
+    "# Step 1: Strip whitespace\n",
+    "for col in ['platform','influencer_category','campaign_type']:\n",
+    "    df[col] = df[col].str.strip()\n",
+    "print('Step 1: Whitespace stripped.')\n",
+    "\n",
+    "# Step 2: Parse dates\n",
+    "df['start_date'] = pd.to_datetime(df['start_date'], errors='coerce')\n",
+    "df['end_date']   = pd.to_datetime(df['end_date'],   errors='coerce')\n",
+    "print('Step 2: Dates parsed.')\n",
+    "\n",
+    "# Step 3: Drop missing values\n",
+    "before = len(df); df.dropna(inplace=True)\n",
+    "print(f'Step 3: Missing values removed : {before - len(df):,} rows')\n",
+    "\n",
+    "# Step 4: Drop duplicates\n",
+    "before = len(df); df.drop_duplicates(inplace=True)\n",
+    "print(f'Step 4: Duplicates removed     : {before - len(df):,} rows')\n",
+    "\n",
+    "# Step 5: Valid categories\n",
+    "before = len(df)\n",
+    "df = df[df['platform'].isin(CPM) & df['influencer_category'].isin(AVG_UNIT_VALUE)]\n",
+    "print(f'Step 5: Invalid values removed : {before - len(df):,} rows')\n",
+    "\n",
+    "# Step 6: Zero reach\n",
+    "before = len(df); df = df[df['estimated_reach'] > 0]\n",
+    "print(f'Step 6: Zero-reach removed     : {before - len(df):,} rows')\n",
+    "\n",
+    "# Step 7: Negative numerics\n",
+    "for col in ['engagements','product_sales','campaign_duration_days']:\n",
+    "    before = len(df); df = df[df[col] >= 0]\n",
+    "    if before - len(df): print(f'Step 7: Negative {col} removed: {before-len(df):,}')\n",
+    "\n",
+    "# Step 8: Duration validation\n",
+    "before = len(df)\n",
+    "computed = (df['end_date'] - df['start_date']).dt.days\n",
+    "df = df[(computed - df['campaign_duration_days']).abs() <= 2]\n",
+    "print(f'Step 8: Duration mismatch removed: {before - len(df):,} rows')\n",
+    "\n",
+    "print(f'\\nCleaning Summary:')\n",
+    "print(f'  Original rows : {initial_rows:,}')\n",
+    "print(f'  Rows retained : {len(df):,}')\n",
+    "print(f'  Rows removed  : {initial_rows - len(df):,}')\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 5 — Feature Engineering
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 5 — Feature Engineering\n\n",
+    "> **These four variables do not exist in the raw dataset.**  \n",
+    "> They are calculated by this project using documented formulas and assumptions.\n\n",
+    "| Variable | Formula | Notes |\n",
+    "|---|---|---|\n",
+    "| `Engagement_Rate` | `(Engagements / Estimated_Reach) × 100` | % — how effectively the audience engaged |\n",
+    "| `Campaign_Cost` | `(Estimated_Reach × Platform_CPM) / 1000` | INR — cost based on CPM model |\n",
+    "| `Revenue` | `Product_Sales × Category_Avg_Unit_Value` | INR — estimated revenue |\n",
+    "| `ROI` | `(Revenue − Campaign_Cost) / Campaign_Cost` | Target variable — dimensionless ratio |\n\n",
+    "**CPM rates (INR):** Instagram = 150 | YouTube = 120 | TikTok = 100 | Twitter = 80\n\n",
+    "**Average unit values (INR):** Beauty = 1,500 | Tech = 5,000 | Fashion = 1,200 | "
+    "Food = 300 | Fitness = 800 | Travel = 3,000 | Gaming = 1,000\n",
+]))
+cells.append(code([
+    "# Engagement Rate (%)\n",
+    "df['engagement_rate'] = (df['engagements'] / df['estimated_reach']) * 100\n",
+    "print('Engagement_Rate computed.')\n",
+    "\n",
+    "# Campaign Cost (INR) — CPM model\n",
+    "df['campaign_cost'] = df.apply(\n",
+    "    lambda r: (r['estimated_reach'] * CPM[r['platform']]) / 1000, axis=1)\n",
+    "print('Campaign_Cost computed.')\n",
+    "\n",
+    "# Revenue (INR)\n",
+    "df['revenue'] = df.apply(\n",
+    "    lambda r: r['product_sales'] * AVG_UNIT_VALUE[r['influencer_category']], axis=1)\n",
+    "print('Revenue computed.')\n",
+    "\n",
+    "# Remove zero-cost rows before ROI calculation\n",
+    "df = df[df['campaign_cost'] > 0]\n",
+    "\n",
+    "# ROI (target variable)\n",
+    "df['roi'] = (df['revenue'] - df['campaign_cost']) / df['campaign_cost']\n",
+    "print('ROI computed.')\n",
+    "\n",
+    "# Outlier capping: retain 1st-99th percentile\n",
+    "lo, hi = df['roi'].quantile(0.01), df['roi'].quantile(0.99)\n",
+    "before = len(df)\n",
+    "df = df[(df['roi'] >= lo) & (df['roi'] <= hi)]\n",
+    "print(f'ROI outliers removed (1st-99th pct): {before - len(df):,} rows')\n",
+    "print(f'ROI range: {df[\"roi\"].min():.4f} to {df[\"roi\"].max():.4f}')\n",
+    "\n",
+    "# Temporal features\n",
+    "df['year']  = df['start_date'].dt.year\n",
+    "df['month'] = df['start_date'].dt.month\n",
+    "print('Year and Month extracted.')\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 6 — Final Processed Dataset
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 6 — Final Processed Dataset\n\n",
+    "Select and rename final columns to produce the analytical dataset.  \n",
+    "This matches `data/processed/influencer_roi_analysis_dataset.csv` exactly.\n",
+]))
+cells.append(code([
+    "COLS = {\n",
+    "    'campaign_id':'Campaign_ID','platform':'Platform',\n",
+    "    'influencer_category':'Influencer_Category','campaign_type':'Campaign_Type',\n",
+    "    'start_date':'Start_Date','end_date':'End_Date',\n",
+    "    'campaign_duration_days':'Campaign_Duration_Days',\n",
+    "    'estimated_reach':'Estimated_Reach','engagements':'Engagements',\n",
+    "    'product_sales':'Product_Sales','engagement_rate':'Engagement_Rate',\n",
+    "    'campaign_cost':'Campaign_Cost','revenue':'Revenue',\n",
+    "    'roi':'ROI','year':'Year','month':'Month',\n",
+    "}\n",
+    "final = df[list(COLS.keys())].rename(columns=COLS).copy()\n",
+    "final['Engagement_Rate'] = final['Engagement_Rate'].round(4)\n",
+    "final['Campaign_Cost']   = final['Campaign_Cost'].round(2)\n",
+    "final['Revenue']         = final['Revenue'].round(2)\n",
+    "final['ROI']             = final['ROI'].round(4)\n",
+    "final.sort_values(['Start_Date','Campaign_ID'], inplace=True)\n",
+    "final.reset_index(drop=True, inplace=True)\n",
+    "\n",
+    "print(f'Final dataset shape : {final.shape}')\n",
+    "print(f'Null values         : {final.isnull().sum().sum()}')\n",
+    "print(f'Columns             : {list(final.columns)}')\n",
+    "final.head(5)\n",
+]))
+cells.append(code([
+    "print('Data types of final dataset:')\n",
+    "print(final.dtypes)\n",
+    "print()\n",
+    "print('Platform distribution:')\n",
+    "print(final['Platform'].value_counts().to_string())\n",
+    "print()\n",
+    "print('Category distribution:')\n",
+    "print(final['Influencer_Category'].value_counts().to_string())\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 7 — Exploratory Data Analysis
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md(["---\n","## Module 7 — Exploratory Data Analysis\n"]))
+
+# Chart 1 — ROI distribution
+cells.append(md(["### Chart 1 — ROI Distribution\n"]))
+cells.append(code([
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('ROI Distribution — 147,000 Campaigns',fontsize=14,fontweight='bold')\n",
+    "roi_clip = final['ROI'].clip(upper=final['ROI'].quantile(0.95))\n",
+    "axes[0].hist(roi_clip,bins=60,color=PALETTE[0],edgecolor='white')\n",
+    "axes[0].set(title='Histogram of ROI',xlabel='ROI',ylabel='Frequency')\n",
+    "axes[1].plot(sorted(roi_clip),np.linspace(0,1,len(roi_clip)),color=PALETTE[0])\n",
+    "axes[1].set(title='Cumulative Distribution of ROI',xlabel='ROI',ylabel='Cumulative Proportion')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/01_roi_distribution.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Chart 2 — Engagement Rate distribution
+cells.append(md(["### Chart 2 — Engagement Rate Distribution\n"]))
+cells.append(code([
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('Engagement Rate Distribution',fontsize=14,fontweight='bold')\n",
+    "er = final['Engagement_Rate'].clip(upper=final['Engagement_Rate'].quantile(0.95))\n",
+    "axes[0].hist(er,bins=60,color=PALETTE[1],edgecolor='white')\n",
+    "axes[0].set(title='Histogram',xlabel='Engagement Rate (%)',ylabel='Frequency')\n",
+    "axes[1].boxplot(er,vert=False,patch_artist=True,boxprops=dict(facecolor=PALETTE[1],alpha=0.7))\n",
+    "axes[1].set(title='Boxplot',xlabel='Engagement Rate (%)')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/02_engagement_rate_distribution.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Chart 3 — Campaign Cost distribution
+cells.append(md(["### Chart 3 — Campaign Cost Distribution\n"]))
+cells.append(code([
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('Campaign Cost Distribution',fontsize=14,fontweight='bold')\n",
+    "axes[0].hist(final['Campaign_Cost'],bins=60,color=PALETTE[2],edgecolor='white')\n",
+    "axes[0].set(title='Histogram',xlabel='Campaign Cost (INR)',ylabel='Frequency')\n",
+    "axes[0].xaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_:f'{x/1000:.0f}K'))\n",
+    "axes[1].boxplot(final['Campaign_Cost'],vert=False,patch_artist=True,boxprops=dict(facecolor=PALETTE[2],alpha=0.7))\n",
+    "axes[1].set(title='Boxplot',xlabel='Campaign Cost (INR)')\n",
+    "axes[1].xaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_:f'{x/1000:.0f}K'))\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/03_campaign_cost_distribution.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Chart 4 — Product Sales distribution
+cells.append(md(["### Chart 4 — Product Sales Distribution\n"]))
+cells.append(code([
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('Product Sales Distribution',fontsize=14,fontweight='bold')\n",
+    "axes[0].hist(final['Product_Sales'],bins=60,color=PALETTE[3],edgecolor='white')\n",
+    "axes[0].set(title='Histogram',xlabel='Units Sold',ylabel='Frequency')\n",
+    "axes[1].boxplot(final['Product_Sales'],vert=False,patch_artist=True,boxprops=dict(facecolor=PALETTE[3],alpha=0.7))\n",
+    "axes[1].set(title='Boxplot',xlabel='Units Sold')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/04_product_sales_distribution.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Chart 5 — Campaign Cost vs Revenue
+cells.append(md(["### Chart 5 — Campaign Cost vs Revenue\n"]))
+cells.append(code([
+    "sample = final.sample(n=5000,random_state=42)\n",
+    "fig, ax = plt.subplots(figsize=(9,6))\n",
+    "ax.scatter(sample['Campaign_Cost'],sample['Revenue'],alpha=0.25,s=12,color=PALETTE[0])\n",
+    "ax.set(title='Campaign Cost vs Revenue',xlabel='Campaign Cost (INR)',ylabel='Revenue (INR)')\n",
+    "ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_:f'{x/1000:.0f}K'))\n",
+    "ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_:f'{x/1e6:.1f}M'))\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/05_cost_vs_revenue.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Chart 6 — Engagement Rate vs ROI
+cells.append(md(["### Chart 6 — Engagement Rate vs ROI\n"]))
+cells.append(code([
+    "sample = final.sample(n=5000,random_state=42)\n",
+    "fig, ax = plt.subplots(figsize=(9,6))\n",
+    "ax.scatter(sample['Engagement_Rate'].clip(upper=100),sample['ROI'].clip(upper=500),alpha=0.25,s=12,color=PALETTE[1])\n",
+    "ax.set(title='Engagement Rate vs ROI',xlabel='Engagement Rate (%)',ylabel='ROI')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/06_engagement_vs_roi.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# Charts 7-9 — ROI by Platform, Category, Campaign Type
+cells.append(md(["### Charts 7-9 — ROI by Platform, Category, Campaign Type\n"]))
+cells.append(code([
+    "# ROI by Platform\n",
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('ROI by Platform',fontsize=14,fontweight='bold')\n",
+    "pc = final['Platform'].value_counts()\n",
+    "axes[0].bar(pc.index,pc.values,color=PALETTE[:4])\n",
+    "axes[0].set(title='Campaign Count by Platform',xlabel='Platform',ylabel='Count')\n",
+    "for i,v in enumerate(pc.values): axes[0].text(i,v+200,f'{v:,}',ha='center',fontsize=9)\n",
+    "final.boxplot(column='ROI',by='Platform',ax=axes[1],patch_artist=True,showfliers=False)\n",
+    "axes[1].set(title='ROI by Platform',xlabel='Platform',ylabel='ROI'); plt.suptitle('')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/07_roi_by_platform.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+cells.append(code([
+    "# ROI by Category\n",
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('ROI by Influencer Category',fontsize=14,fontweight='bold')\n",
+    "cat = final.groupby('Influencer_Category')['ROI'].mean().sort_values(ascending=False)\n",
+    "axes[0].barh(cat.index,cat.values,color=PALETTE[:7])\n",
+    "axes[0].set(title='Average ROI by Category',xlabel='Mean ROI')\n",
+    "for i,v in enumerate(cat.values): axes[0].text(v+0.5,i,f'{v:.1f}',va='center',fontsize=9)\n",
+    "final.boxplot(column='ROI',by='Influencer_Category',ax=axes[1],patch_artist=True,showfliers=False,vert=False)\n",
+    "axes[1].set(title='ROI Spread by Category',xlabel='ROI'); plt.suptitle('')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/08_roi_by_category.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+cells.append(code([
+    "# ROI by Campaign Type & Monthly Trend\n",
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('ROI by Campaign Type & Monthly Trend',fontsize=14,fontweight='bold')\n",
+    "ct = final.groupby('Campaign_Type')['ROI'].mean().sort_values(ascending=False)\n",
+    "axes[0].bar(ct.index,ct.values,color=PALETTE[:5])\n",
+    "axes[0].set(title='Average ROI by Campaign Type',xlabel='Campaign Type',ylabel='Mean ROI')\n",
+    "axes[0].tick_params(axis='x',rotation=15)\n",
+    "monthly = final.groupby('Month')['ROI'].mean()\n",
+    "axes[1].plot(monthly.index,monthly.values,marker='o',color=PALETTE[2])\n",
+    "axes[1].set(title='Average ROI by Month',xlabel='Month',ylabel='Mean ROI')\n",
+    "axes[1].set_xticks(range(1,13))\n",
+    "axes[1].set_xticklabels(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/09_roi_by_campaign_type.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 8 — Descriptive Statistics
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md(["---\n","## Module 8 — Descriptive Statistics\n"]))
+cells.append(code([
+    "NUM_COLS = ['Estimated_Reach','Engagements','Product_Sales',\n",
+    "            'Campaign_Duration_Days','Engagement_Rate',\n",
+    "            'Campaign_Cost','Revenue','ROI']\n",
+    "\n",
+    "desc = final[NUM_COLS].describe().T\n",
+    "desc['Skewness'] = final[NUM_COLS].skew()\n",
+    "desc['Kurtosis'] = final[NUM_COLS].kurt()\n",
+    "\n",
+    "# Add Mode\n",
+    "desc['Mode'] = [round(float(final[c].mode().iloc[0]),4) for c in NUM_COLS]\n",
+    "\n",
+    "print('DESCRIPTIVE STATISTICS')\n",
+    "print('=' * 80)\n",
+    "print(desc[['count','mean','50%','Mode','std','min','max','Skewness','Kurtosis']]\n",
+    "      .rename(columns={'50%':'Median','std':'Std Dev','mean':'Mean','count':'Count'})\n",
+    "      .round(4).to_string())\n",
+]))
+cells.append(code([
+    "# Shapiro-Wilk Normality Test on ROI\n",
+    "# Full dataset too large; n=5,000 sample is standard practice for this test\n",
+    "sample_sw = final['ROI'].sample(n=5000, random_state=42)\n",
+    "stat, p = stats.shapiro(sample_sw)\n",
+    "print(f'Shapiro-Wilk Test for ROI Normality (sample n=5,000):')\n",
+    "print(f'  W statistic : {stat:.4f}')\n",
+    "print(f'  p-value     : {p:.6f}')\n",
+    "print(f'  Conclusion  : {\"NOT normally distributed\" if p < 0.05 else \"Normally distributed\"} (alpha=0.05)')\n",
+    "print()\n",
+    "print('Note: Non-normality of ROI is expected for large real-world datasets.')\n",
+    "print('OLS regression remains valid due to the large sample size (Central Limit Theorem).')\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 9 — Correlation Analysis
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 9 — Correlation Analysis\n\n",
+    "> **Correlation vs Causation:** A high Pearson correlation between two variables means "
+    "they move together linearly. It does **not** prove that one variable causes changes in "
+    "the other. Interpretation must remain statistical.\n",
+]))
+cells.append(code([
+    "corr = final[NUM_COLS].corr()\n",
+    "print('Pearson Correlation Matrix:')\n",
+    "print(corr.round(4).to_string())\n",
+]))
+cells.append(code([
+    "# Correlation Heatmap\n",
+    "fig, ax = plt.subplots(figsize=(11,9))\n",
+    "mask = np.triu(np.ones_like(corr,dtype=bool))\n",
+    "sns.heatmap(corr,mask=mask,annot=True,fmt='.2f',cmap='coolwarm',\n",
+    "            center=0,linewidths=0.5,ax=ax)\n",
+    "ax.set_title('Pearson Correlation Heatmap',fontsize=14,fontweight='bold')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/10_correlation_heatmap.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+cells.append(code([
+    "# ROI Correlation Bar Chart\n",
+    "roi_corr = corr['ROI'].drop('ROI').sort_values(ascending=False)\n",
+    "colors = [PALETTE[0] if v>0 else PALETTE[3] for v in roi_corr.values]\n",
+    "fig, ax = plt.subplots(figsize=(9,5))\n",
+    "ax.barh(roi_corr.index,roi_corr.values,color=colors)\n",
+    "ax.axvline(0,color='black',linewidth=0.8)\n",
+    "ax.set(title='Feature Correlation with ROI',xlabel='Pearson r')\n",
+    "for i,v in enumerate(roi_corr.values):\n",
+    "    ax.text(v+0.002 if v>=0 else v-0.002,i,f'{v:.3f}',va='center',\n",
+    "            ha='left' if v>=0 else 'right',fontsize=9)\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/11_roi_correlation_bar.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+    "print('\\nCorrelation with ROI (ranked):')\n",
+    "print(roi_corr.round(4).to_string())\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 10 — Multiple Linear Regression
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 10 — Multiple Linear Regression (OLS)\n\n",
+    "**Method:** Ordinary Least Squares (OLS) via `statsmodels.api.OLS`  \n",
+    "**Observations:** All **147,000** processed rows — no random sampling  \n",
+    "**Dependent variable (Target):** `ROI`  \n",
+    "**Independent variables (Predictors):** `Engagement_Rate`, `Campaign_Cost`, `Product_Sales`, `Campaign_Duration_Days`\n\n",
+    "A constant term is added using `sm.add_constant()` to estimate the intercept.\n",
+]))
+cells.append(code([
+    "FEATURES = ['Engagement_Rate','Campaign_Cost','Product_Sales','Campaign_Duration_Days']\n",
+    "TARGET   = 'ROI'\n",
+    "\n",
+    "X = final[FEATURES]\n",
+    "y = final[TARGET]\n",
+    "X_const = sm.add_constant(X)\n",
+    "\n",
+    "print(f'Fitting OLS on full processed dataset: n = {len(final):,} observations')\n",
+    "print(f'Predictors: {FEATURES}')\n",
+    "print(f'Target    : {TARGET}')\n",
+    "model = sm.OLS(y, X_const).fit()\n",
+    "print(model.summary())\n",
+]))
+cells.append(code([
+    "# Print coefficients clearly\n",
+    "coefs  = model.params\n",
+    "pvals  = model.pvalues\n",
+    "conf   = model.conf_int()\n",
+    "\n",
+    "print('REGRESSION COEFFICIENTS')\n",
+    "print('=' * 65)\n",
+    "print(f'{\"Variable\":<30} {\"Coef\":>12} {\"p-value\":>12} {\"Sig\":>6}')\n",
+    "print('-' * 65)\n",
+    "for feat in ['const'] + FEATURES:\n",
+    "    sig = '***' if pvals[feat]<0.001 else ('**' if pvals[feat]<0.01 else ('*' if pvals[feat]<0.05 else 'ns'))\n",
+    "    print(f'{feat:<30} {coefs[feat]:>12.6f} {pvals[feat]:>12.6f} {sig:>6}')\n",
+    "print('=' * 65)\n",
+    "print('Significance: *** p<0.001  ** p<0.01  * p<0.05  ns: not significant')\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 11 — Regression Interpretation
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 11 — Regression Interpretation\n\n",
+    "### Final Regression Equation\n\n",
+    "```\n",
+    "ROI = 161.8977\n",
+    "    + 1.0914  x Engagement_Rate\n",
+    "    - 0.00286 x Campaign_Cost\n",
+    "    + 0.0567  x Product_Sales\n",
+    "    - 0.0088  x Campaign_Duration_Days\n",
+    "```\n\n",
+    "### Coefficient Interpretation\n\n",
+    "| Predictor | Coefficient | Interpretation |\n",
+    "|---|---|---|\n",
+    "| Engagement_Rate | +1.0914 | For every 1% increase in engagement rate, predicted ROI increases by 1.09 units, holding all other predictors constant. **Strongest positive predictor.** |\n",
+    "| Campaign_Cost | -0.00286 | For every INR 1 increase in campaign cost, predicted ROI decreases by 0.00286 units. Higher spending on reach alone does not guarantee better returns. |\n",
+    "| Product_Sales | +0.0567 | For every additional unit sold, predicted ROI increases by 0.057. Campaigns that drive actual purchases deliver better ROI. |\n",
+    "| Campaign_Duration_Days | -0.0088 | p = 0.916. **Not statistically significant.** Duration alone does not predict ROI. |\n\n",
+    "> **Important:** These relationships are **statistical associations**, not causal claims.  \n",
+    "> The model does not prove that changing engagement rate *causes* ROI to change.\n\n",
+    "### R-squared Interpretation\n",
+    "R2 = 0.3190 means the four predictors together explain approximately **32% of the variance in ROI**.  \n",
+    "The remaining 68% is explained by factors not captured in this dataset  \n",
+    "(e.g. creative quality, brand strength, seasonality, competitor activity).\n",
+]))
+cells.append(code([
+    "# Coefficient Plot with 95% Confidence Intervals\n",
+    "features_plot = FEATURES\n",
+    "fig, ax = plt.subplots(figsize=(9,5))\n",
+    "for i, f in enumerate(features_plot):\n",
+    "    ax.plot([conf.loc[f,0],conf.loc[f,1]],[i,i],color=PALETTE[0],linewidth=2)\n",
+    "    color = PALETTE[0] if coefs[f]>0 else PALETTE[3]\n",
+    "    ax.scatter(coefs[f],i,color=color,s=80,zorder=5)\n",
+    "    ax.text(coefs[f],i+0.15,f'{coefs[f]:.4f}',ha='center',fontsize=9)\n",
+    "ax.axvline(0,color='black',linewidth=0.8,linestyle='--')\n",
+    "ax.set_yticks(range(len(features_plot))); ax.set_yticklabels(features_plot)\n",
+    "ax.set(title='OLS Coefficients with 95% Confidence Intervals',xlabel='Coefficient Value')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/12_coefficients.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 12 — Model Diagnostics
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 12 — Model Diagnostics\n\n",
+    "OLS regression relies on several assumptions. These plots help assess them:\n\n",
+    "| Diagnostic | What it checks |\n",
+    "|---|---|\n",
+    "| Q-Q Plot | Are residuals approximately normally distributed? |\n",
+    "| Residuals vs Fitted | Is there a pattern (heteroscedasticity)? |\n",
+    "| Actual vs Predicted | How well does the model fit? |\n",
+    "| Residual Distribution | Is the residual mean close to zero? |\n",
+]))
+cells.append(code([
+    "y_pred    = model.fittedvalues\n",
+    "residuals = model.resid\n",
+    "\n",
+    "fig, axes = plt.subplots(1,3,figsize=(18,5))\n",
+    "fig.suptitle('Residual Analysis',fontsize=14,fontweight='bold')\n",
+    "\n",
+    "# Q-Q Plot\n",
+    "(osm,osr),(slope,intercept,_) = stats.probplot(residuals,dist='norm')\n",
+    "axes[0].plot(osm,osr,'o',alpha=0.2,ms=3,color=PALETTE[0])\n",
+    "axes[0].plot(osm,slope*np.array(osm)+intercept,color=PALETTE[3],linewidth=1.5)\n",
+    "axes[0].set(title='Q-Q Plot\\n(Deviation from line = non-normality)',\n",
+    "            xlabel='Theoretical Quantiles',ylabel='Sample Quantiles')\n",
+    "\n",
+    "# Residuals vs Fitted\n",
+    "axes[1].scatter(y_pred,residuals,alpha=0.1,s=6,color=PALETTE[0])\n",
+    "axes[1].axhline(0,color=PALETTE[3],linewidth=1.5,linestyle='--')\n",
+    "axes[1].set(title='Residuals vs Fitted\\n(Fan shape = heteroscedasticity)',\n",
+    "            xlabel='Fitted Values',ylabel='Residuals')\n",
+    "\n",
+    "# Residual histogram\n",
+    "axes[2].hist(residuals,bins=60,color=PALETTE[0],edgecolor='white')\n",
+    "axes[2].set(title='Residual Distribution\\n(Should be centred on 0)',\n",
+    "            xlabel='Residual',ylabel='Frequency')\n",
+    "\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/13_residual_analysis.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+    "print(f'Durbin-Watson statistic: {sm.stats.stattools.durbin_watson(residuals):.4f}')\n",
+    "print('(Value near 2.0 = no autocorrelation in residuals)')\n",
+]))
+cells.append(code([
+    "# Actual vs Predicted\n",
+    "fig, ax = plt.subplots(figsize=(8,6))\n",
+    "ax.scatter(y,y_pred,alpha=0.1,s=6,color=PALETTE[0])\n",
+    "lims = [min(float(y.min()),float(y_pred.min())), max(float(y.max()),float(y_pred.max()))]\n",
+    "ax.plot(lims,lims,color=PALETTE[3],linewidth=1.5,linestyle='--',label='Perfect fit line')\n",
+    "ax.set(title='Actual vs Predicted ROI',xlabel='Actual ROI',ylabel='Predicted ROI')\n",
+    "ax.legend()\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/14_actual_vs_predicted.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 13 — Model Evaluation
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md(["---\n","## Module 13 — Model Evaluation\n"]))
+cells.append(code([
+    "mae  = mean_absolute_error(y, y_pred)\n",
+    "rmse = float(np.sqrt(mean_squared_error(y, y_pred)))\n",
+    "r2   = model.rsquared\n",
+    "adj_r2 = model.rsquared_adj\n",
+    "\n",
+    "print('MODEL EVALUATION SUMMARY  (n = 147,000)')\n",
+    "print('=' * 50)\n",
+    "print(f'  R-squared (R2)  : {r2:.4f}')\n",
+    "print(f'  Adjusted R2     : {adj_r2:.4f}')\n",
+    "print(f'  F-statistic     : {model.fvalue:.2f}  (p < 0.001)')\n",
+    "print(f'  AIC             : {model.aic:.2f}')\n",
+    "print(f'  BIC             : {model.bic:.2f}')\n",
+    "print(f'  MAE             : {mae:.4f}')\n",
+    "print(f'  RMSE            : {rmse:.4f}')\n",
+    "print(f'  Observations    : {int(model.nobs):,}')\n",
+    "print('=' * 50)\n",
+]))
+cells.append(code([
+    "errors = y - y_pred\n",
+    "fig, axes = plt.subplots(1,2,figsize=(14,5))\n",
+    "fig.suptitle('Model Evaluation',fontsize=14,fontweight='bold')\n",
+    "axes[0].hist(errors,bins=60,color=PALETTE[0],edgecolor='white')\n",
+    "axes[0].axvline(0,color=PALETTE[3],linewidth=1.5,linestyle='--')\n",
+    "axes[0].set(title=f'Error Distribution  (MAE={mae:.2f}, RMSE={rmse:.2f})',\n",
+    "            xlabel='Actual - Predicted',ylabel='Frequency')\n",
+    "axes[1].bar(['MAE','RMSE'],[mae,rmse],color=PALETTE[:2])\n",
+    "axes[1].set(title='Error Metrics',ylabel='Value')\n",
+    "for i,(label,val) in enumerate(zip(['MAE','RMSE'],[mae,rmse])):\n",
+    "    axes[1].text(i,val+1,f'{val:.2f}',ha='center',fontsize=11,fontweight='bold')\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/15_error_distribution.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 14 — ROI Prediction
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Module 14 — ROI Prediction for New Campaigns\n\n",
+    "Predictions use the same feature engineering as training.  \n",
+    "Each prediction includes a **95% prediction interval** — the range within which a "
+    "single new campaign's actual ROI is expected to fall.\n\n",
+    "> The wide prediction intervals reflect high variance in ROI across the dataset (RMSE = 267.18).  \n",
+    "> The point estimates are the model's best predictions given the inputs.\n",
+]))
+cells.append(code([
+    "new_campaigns = pd.DataFrame({\n",
+    "    'Campaign':['Micro-Influencer Instagram','Macro-Influencer YouTube',\n",
+    "                'TikTok Viral Campaign','Twitter Tech Launch','Long-Duration Fitness'],\n",
+    "    'Engagement_Rate':[8.5,2.1,15.3,4.2,6.8],\n",
+    "    'Campaign_Cost':[30000,90000,50000,25000,45000],\n",
+    "    'Product_Sales':[500,1200,800,300,700],\n",
+    "    'Campaign_Duration_Days':[14,30,7,10,60],\n",
+    "})\n",
+    "\n",
+    "X_new = new_campaigns[FEATURES]\n",
+    "X_new_c = sm.add_constant(X_new,has_constant='add')\n",
+    "pred = model.get_prediction(X_new_c).summary_frame(alpha=0.05)\n",
+    "\n",
+    "new_campaigns['Predicted_ROI'] = pred['mean'].values.round(4)\n",
+    "new_campaigns['CI_Lower_95']   = pred['obs_ci_lower'].values.round(4)\n",
+    "new_campaigns['CI_Upper_95']   = pred['obs_ci_upper'].values.round(4)\n",
+    "\n",
+    "print(new_campaigns[['Campaign','Predicted_ROI','CI_Lower_95','CI_Upper_95']].to_string(index=False))\n",
+]))
+cells.append(code([
+    "fig, ax = plt.subplots(figsize=(11,5))\n",
+    "bars = ax.bar(new_campaigns['Campaign'],new_campaigns['Predicted_ROI'],color=PALETTE[:5],zorder=3)\n",
+    "ax.errorbar(\n",
+    "    new_campaigns['Campaign'],new_campaigns['Predicted_ROI'],\n",
+    "    yerr=[new_campaigns['Predicted_ROI']-new_campaigns['CI_Lower_95'],\n",
+    "          new_campaigns['CI_Upper_95']-new_campaigns['Predicted_ROI']],\n",
+    "    fmt='none',color='black',capsize=5,linewidth=1.5,zorder=4\n",
+    ")\n",
+    "ax.set(title='Predicted ROI for New Campaigns (95% Prediction Interval)',ylabel='Predicted ROI')\n",
+    "ax.tick_params(axis='x',rotation=18)\n",
+    "for bar,val in zip(bars,new_campaigns['Predicted_ROI']):\n",
+    "    ax.text(bar.get_x()+bar.get_width()/2,bar.get_height()+0.5,f'{val:.1f}',ha='center',fontsize=9)\n",
+    "ax.grid(axis='y',alpha=0.4)\n",
+    "plt.tight_layout(); plt.savefig('../outputs/figures/16_predictions.png',dpi=150,bbox_inches='tight'); plt.show()\n",
+]))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Conclusion
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md([
+    "---\n",
+    "## Conclusion\n\n",
+    "### Final Regression Equation\n",
+    "```\n",
+    "ROI = 161.8977\n",
+    "    + 1.0914  x Engagement_Rate\n",
+    "    - 0.00286 x Campaign_Cost\n",
+    "    + 0.0567  x Product_Sales\n",
+    "    - 0.0088  x Campaign_Duration_Days\n",
+    "```\n\n",
+    "### Key Findings\n",
+    "1. **Engagement Rate** is the strongest positive predictor of ROI (coef = +1.09, p < 0.001)\n",
+    "2. **Product Sales** has a significant positive effect (coef = +0.057, p < 0.001)\n",
+    "3. **Campaign Cost** has a significant negative effect (coef = -0.00286, p < 0.001) — "
+    "higher spending on reach does not guarantee higher ROI\n",
+    "4. **Campaign Duration** is not statistically significant (p = 0.916)\n\n",
+    "### Business Recommendations\n",
+    "- Prioritise **engagement rate** over follower count when selecting influencers\n",
+    "- Focus budgets on campaigns that **drive actual product purchases**\n",
+    "- Avoid scaling reach arbitrarily — **cost efficiency matters more than scale**\n",
+    "- Campaign duration alone does not improve ROI\n\n",
+    "### Limitations\n",
+    "- R2 = 0.319 — the model explains ~32% of ROI variance; other factors matter\n",
+    "- CPM and unit values are estimated assumptions, not actual invoice data\n",
+    "- Categorical variables not included in regression (used in EDA only)\n",
+    "- ROI is right-skewed; OLS is robust due to large n but non-normality noted\n",
+]))
+
+# ── Write notebook ─────────────────────────────────────────────────────────────
+nb = {
+    "nbformat": 4,
+    "nbformat_minor": 5,
+    "metadata": {
+        "kernelspec": {"display_name":"Python 3","language":"python","name":"python3"},
+        "language_info": {"name":"python","version":"3.13.0"},
+    },
+    "cells": cells,
+}
+
+with open(NB_PATH, "w", encoding="utf-8") as f:
+    json.dump(nb, f, indent=1, ensure_ascii=False)
+
+print(f"Notebook written: {NB_PATH}")
+md_count   = sum(1 for c in cells if c["cell_type"]=="markdown")
+code_count = sum(1 for c in cells if c["cell_type"]=="code")
+print(f"Total cells: {len(cells)}  ({md_count} markdown, {code_count} code)")
